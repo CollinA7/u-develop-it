@@ -16,7 +16,7 @@ const db = mysql.createConnection(
     // Your MySQL username,
     user: 'root',
     // Your MySQL password
-    password: '',
+    password: 'jfuai9-iqyxP-prbTy',
     database: 'election'
   },
   console.log('Connected to the election database.')
@@ -24,7 +24,11 @@ const db = mysql.createConnection(
 
 // Get all candidates
 app.get('/api/candidates', (req, res) => {
-  const sql = `SELECT * FROM candidates`;
+  const sql = `SELECT candidates.*, parties.name
+  AS party_name
+  FROM candidates
+  LEFT JOIN parties
+  ON candidates.party_id = parties.id`;
 
   db.query(sql, (err, rows) => {
     if (err) {
@@ -40,7 +44,13 @@ app.get('/api/candidates', (req, res) => {
 
 // Get a single candidate
 app.get('/api/candidate/:id', (req, res) => {
-  const sql = `SELECT * FROM candidates WHERE id = ?`;
+  const sql = `SELECT candidates.*, parties.name 
+  AS party_name 
+  FROM candidates 
+  LEFT JOIN parties 
+  ON candidates.party_id = parties.id 
+  WHERE candidates.id = ?`;
+
   const params = [req.params.id];
 
   db.query(sql, params, (err, row) => {
@@ -52,6 +62,57 @@ app.get('/api/candidate/:id', (req, res) => {
       message: 'success',
       data: row
     });
+  });
+});
+
+// Added Route for parties
+app.get('/api/parties', (req, res) => {
+  const sql = `SELECT * FROM parties`;
+  db.query(sql, (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: 'success',
+      data: rows
+    });
+  });
+});
+
+app.get('/api/parties', (req, res) => {
+  const sql = `SELECT * FROM parties WHERE id = ?`;
+  const params = [req.params.id];
+  db.query(sql, params, (err, row) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: 'success',
+      data: row
+    });
+  });
+});
+
+app.delete('/api/party/:id', (req, res) => {
+  const sql = `DELETE FROM parties WHERE id = ?`;
+  const params = [req.params.id];
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      res.status(400).json({ error: res.message });
+      // checks if anything was deleted
+    } else if (!result.affectedRows) {
+      res.json({
+        message: 'Party not found'
+      });
+    } else {
+      res.json({ 
+        message: 'deleted',
+        changes: result.affectedRows,
+        id: req.params.id
+      });
+    }
   });
 });
 
